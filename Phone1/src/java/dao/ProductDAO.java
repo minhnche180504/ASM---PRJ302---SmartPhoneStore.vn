@@ -19,8 +19,8 @@ public class ProductDAO extends DBConnect {
         
         try {
             if (connection == null) {
-                System.err.println("❌ Database connection is null, using fallback data");
-                return getFallbackProducts();
+                System.err.println("❌ Database connection is null");
+                return products;
             }
             
             PreparedStatement ps = connection.prepareStatement(sql);
@@ -33,7 +33,7 @@ public class ProductDAO extends DBConnect {
                 product.setPrice(rs.getDouble("price"));
                 product.setDescription(rs.getString("description"));
                 product.setImage(rs.getString("image"));
-                
+                product.setCategory(rs.getString("category"));
                 products.add(product);
             }
             
@@ -47,7 +47,7 @@ public class ProductDAO extends DBConnect {
             e.printStackTrace();
             
             // Fallback: trả về dữ liệu mẫu nếu lỗi database
-            return getFallbackProducts();
+            return products;
         }
         
         return products;
@@ -62,7 +62,7 @@ public class ProductDAO extends DBConnect {
         try {
             if (connection == null) {
                 System.err.println("❌ Database connection is null");
-                return getFallbackProductById(id);
+                return null;
             }
             
             PreparedStatement ps = connection.prepareStatement(sql);
@@ -76,6 +76,7 @@ public class ProductDAO extends DBConnect {
                 product.setPrice(rs.getDouble("price"));
                 product.setDescription(rs.getString("description"));
                 product.setImage(rs.getString("image"));
+                product.setCategory(rs.getString("category"));
                 
                 rs.close();
                 ps.close();
@@ -90,7 +91,7 @@ public class ProductDAO extends DBConnect {
         } catch (SQLException e) {
             System.err.println("❌ Error getting product by ID: " + e.getMessage());
             e.printStackTrace();
-            return getFallbackProductById(id);
+            return null;
         }
         
         return null;
@@ -282,7 +283,7 @@ public class ProductDAO extends DBConnect {
                 product.setPrice(rs.getDouble("price"));
                 product.setDescription(rs.getString("description"));
                 product.setImage(rs.getString("image"));
-                
+                product.setCategory(rs.getString("category"));
                 products.add(product);
             }
             
@@ -323,7 +324,7 @@ public class ProductDAO extends DBConnect {
                 product.setPrice(rs.getDouble("price"));
                 product.setDescription(rs.getString("description"));
                 product.setImage(rs.getString("image"));
-                
+                product.setCategory(rs.getString("category"));
                 products.add(product);
             }
             
@@ -370,33 +371,59 @@ public class ProductDAO extends DBConnect {
     }
     
     /**
-     * Dữ liệu sản phẩm mẫu (fallback khi lỗi database)
+     * Lấy tất cả category duy nhất từ bảng products
      */
-    private List<Product> getFallbackProducts() {
-        List<Product> products = new ArrayList<>();
-        products.add(new Product(1, "iPhone 15 Pro", 34990000, "Flagship mới nhất từ Apple với chip A17 Pro", "https://cdn.tgdd.vn/Products/Images/42/305658/iphone-15-pro-natural-titanium-1-2.jpg"));
-        products.add(new Product(2, "Samsung Galaxy S24 Ultra", 29990000, "Camera siêu nét với S Pen tích hợp", "https://cdn.tgdd.vn/Products/Images/42/307174/samsung-galaxy-s24-ultra-grey-1-2.jpg"));
-        products.add(new Product(3, "iPad Pro M4", 25990000, "Màn hình Liquid Retina XDR với chip M4", "https://cdn.tgdd.vn/Products/Images/522/329149/ipad-pro-13-inch-m4-wifi-silver-1-2.jpg"));
-        products.add(new Product(4, "MacBook Air M3", 28990000, "Mỏng nhẹ, hiệu năng mạnh mẽ", "https://cdn.tgdd.vn/Products/Images/44/309017/macbook-air-13-inch-m3-2024-midnight-1-2.jpg"));
-        products.add(new Product(5, "iPhone 14 Pro Max", 31990000, "iPhone 14 Pro Max với Dynamic Island", "/images/iphone14promax.jpg"));
-        products.add(new Product(6, "Galaxy Watch 6", 7990000, "Smartwatch cao cấp từ Samsung", "/images/galaxywatch6.jpg"));
-        products.add(new Product(7, "AirPods Pro 2", 6990000, "Tai nghe không dây với chống ồn chủ động", "/images/airpodspro2.jpg"));
-        products.add(new Product(8, "iPad Air M2", 18990000, "iPad Air với chip M2 mạnh mẽ", "/images/ipadair.jpg"));
-        
-        System.out.println("🔄 Using fallback product data (" + products.size() + " products)");
-        return products;
+    public List<String> getAllCategories() {
+        List<String> categories = new ArrayList<>();
+        String sql = "SELECT DISTINCT category FROM products WHERE category IS NOT NULL AND category <> '' ORDER BY category";
+        try {
+            if (connection == null) {
+                System.err.println("❌ Database connection is null");
+                return categories;
+            }
+            PreparedStatement ps = connection.prepareStatement(sql);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                categories.add(rs.getString("category"));
+            }
+            rs.close();
+            ps.close();
+        } catch (SQLException e) {
+            System.err.println("❌ Error getting categories: " + e.getMessage());
+        }
+        return categories;
     }
     
     /**
-     * Lấy sản phẩm fallback theo ID
+     * Lấy sản phẩm theo category
      */
-    private Product getFallbackProductById(int id) {
-        List<Product> products = getFallbackProducts();
-        for (Product product : products) {
-            if (product.getId() == id) {
-                return product;
+    public List<Product> getProductsByCategory(String category) {
+        List<Product> products = new ArrayList<>();
+        String sql = "SELECT * FROM products WHERE category = ? ORDER BY name";
+        try {
+            if (connection == null) {
+                System.err.println("❌ Database connection is null");
+                return products;
             }
+            PreparedStatement ps = connection.prepareStatement(sql);
+            ps.setString(1, category);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                Product product = new Product();
+                product.setId(rs.getInt("id"));
+                product.setName(rs.getString("name"));
+                product.setPrice(rs.getDouble("price"));
+                product.setDescription(rs.getString("description"));
+                product.setImage(rs.getString("image"));
+                product.setCategory(rs.getString("category"));
+                products.add(product);
+            }
+            rs.close();
+            ps.close();
+        } catch (SQLException e) {
+            System.err.println("❌ Error getting products by category: " + e.getMessage());
         }
-        return null;
+        return products;
     }
+    
 }

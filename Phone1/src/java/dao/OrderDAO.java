@@ -11,40 +11,65 @@ import java.util.List;
 public class OrderDAO extends DBConnect {
     
     /**
-     * Tạo đơn hàng mới
+     * Tạo đơn hàng mới và lưu chi tiết sản phẩm
      */
-    public boolean createOrder(Order order) {
-        String sql = "INSERT INTO orders (user_id, user_name, total, status, customer_name, customer_phone, customer_address, order_date, updated_at) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, ?, GETDATE(), GETDATE())";
-        
+    public boolean createOrder(Order order, List<model.Product> cart) {
+        String orderSql = "INSERT INTO orders (user_id, user_name, total, status, customer_name, customer_phone, customer_address, order_date, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, GETDATE(), GETDATE())";
+        String orderItemSql = "INSERT INTO order_items (order_id, product_id, product_name, price, quantity, subtotal) VALUES (?, ?, ?, ?, ?, ?)";
         try {
             if (connection == null) {
                 System.err.println("❌ Database connection is null");
                 return false;
             }
-            
-            PreparedStatement ps = connection.prepareStatement(sql);
-            ps.setInt(1, order.getUserId());
-            ps.setString(2, order.getUserName());
-            ps.setDouble(3, order.getTotal());
-            ps.setString(4, order.getStatus());
-            ps.setString(5, order.getCustomerName());
-            ps.setString(6, order.getCustomerPhone());
-            ps.setString(7, order.getCustomerAddress());
-            
-            int result = ps.executeUpdate();
-            ps.close();
-            
-            if (result > 0) {
-                System.out.println("✅ Order created successfully for user: " + order.getUserName());
-                return true;
+            connection.setAutoCommit(false);
+            // 1. Insert order
+            PreparedStatement psOrder = connection.prepareStatement(orderSql, Statement.RETURN_GENERATED_KEYS);
+            psOrder.setInt(1, order.getUserId());
+            psOrder.setString(2, order.getUserName());
+            psOrder.setDouble(3, order.getTotal());
+            psOrder.setString(4, order.getStatus());
+            psOrder.setString(5, order.getCustomerName());
+            psOrder.setString(6, order.getCustomerPhone());
+            psOrder.setString(7, order.getCustomerAddress());
+            int result = psOrder.executeUpdate();
+            if (result == 0) {
+                connection.rollback();
+                psOrder.close();
+                return false;
             }
-            
+            ResultSet generatedKeys = psOrder.getGeneratedKeys();
+            int orderId = -1;
+            if (generatedKeys.next()) {
+                orderId = generatedKeys.getInt(1);
+            } else {
+                connection.rollback();
+                psOrder.close();
+                return false;
+            }
+            psOrder.close();
+            // 2. Insert order items
+            PreparedStatement psItem = connection.prepareStatement(orderItemSql);
+            for (model.Product product : cart) {
+                psItem.setInt(1, orderId);
+                psItem.setInt(2, product.getId());
+                psItem.setString(3, product.getName());
+                psItem.setDouble(4, product.getPrice());
+                psItem.setInt(5, 1); // quantity = 1 (nếu có quantity thì lấy đúng)
+                psItem.setDouble(6, product.getPrice());
+                psItem.addBatch();
+            }
+            psItem.executeBatch();
+            psItem.close();
+            connection.commit();
+            System.out.println("✅ Order and items created successfully for user: " + order.getUserName());
+            return true;
         } catch (SQLException e) {
-            System.err.println("❌ Error creating order: " + e.getMessage());
+            try { connection.rollback(); } catch (Exception ex) {}
+            System.err.println("❌ Error creating order with items: " + e.getMessage());
             e.printStackTrace();
+        } finally {
+            try { connection.setAutoCommit(true); } catch (Exception ex) {}
         }
-        
         return false;
     }
     

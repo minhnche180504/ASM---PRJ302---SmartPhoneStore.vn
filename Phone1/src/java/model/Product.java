@@ -9,18 +9,20 @@ public class Product {
     private double price;
     private String description;
     private String image;
+    private String category;
     
     // Constructor mặc định
     public Product() {
     }
     
     // Constructor với tham số
-    public Product(int id, String name, double price, String description, String image) {
+    public Product(int id, String name, double price, String description, String image, String category) {
         this.id = id;
         this.name = name;
         this.price = price;
         this.description = description;
         this.image = image;
+        this.category = category;
     }
     
     // Getter và Setter methods
@@ -63,6 +65,13 @@ public class Product {
     public void setImage(String image) {
         this.image = image;
     }
+
+    public String getCategory() {
+        return category;
+    }
+    public void setCategory(String category) {
+        this.category = category;
+    }
     
     @Override
     public String toString() {
@@ -72,6 +81,7 @@ public class Product {
                 ", price=" + price +
                 ", description='" + description + '\'' +
                 ", image='" + image + '\'' +
+                ", category='" + category + '\'' +
                 '}';
     }
 }
