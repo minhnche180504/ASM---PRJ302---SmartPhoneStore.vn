@@ -5,6 +5,7 @@ GO
 USE SmartPhoneStore;
 GO
 
+select *from users
 -- Bảng users
 CREATE TABLE users (
     id INT IDENTITY(1,1) PRIMARY KEY,
