@@ -16,6 +16,7 @@
 USE SmartPhoneStore;
 GO
 
+<<<<<<< HEAD
 -- =====================================================
 -- 1. XÓA CÁC BẢNG CŨ (NẾU CÓ)
 -- =====================================================
@@ -38,6 +39,10 @@ GO
 -- =====================================================
 -- 2. TẠO BẢNG USERS
 -- =====================================================
+=======
+select *from users
+-- Bảng users
+>>>>>>> cf3e21d823356e5fdc7292b4e3265638a64a5aa3
 CREATE TABLE users (
     id INT PRIMARY KEY IDENTITY(1,1),
     username NVARCHAR(50) NOT NULL UNIQUE,

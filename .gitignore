@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Build output
 build/
 dist/
@@ -130,3 +131,6 @@ test-results/
 *.backup
 *~
 
+=======
+/Phone/build/
+>>>>>>> cf3e21d823356e5fdc7292b4e3265638a64a5aa3
